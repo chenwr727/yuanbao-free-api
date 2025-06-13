@@ -44,22 +44,20 @@ async def process_response_stream(response: httpx.Response, model_id: str) -> As
             yield _create_chunk("", finish_reason)
             yield "[DONE]"
             break
-        elif data in (CHUNK_TYPE.STATUS, CHUNK_TYPE.SEARCH_WITH_TEXT, CHUNK_TYPE.REASONER, CHUNK_TYPE.TEXT):
-            status = data
-            continue
         elif not data.startswith("{"):
             continue
 
         chunk_data: Dict = json.loads(data)
+        status = chunk_data["type"]
         if status == CHUNK_TYPE.TEXT:
             if chunk_data.get("msg"):
                 yield _create_chunk(f"[{status}]" + chunk_data["msg"])
             if chunk_data.get("stopReason"):
                 finish_reason = chunk_data["stopReason"]
-        elif status == CHUNK_TYPE.REASONER:
+        elif status == CHUNK_TYPE.THINK:
             yield _create_chunk(f"[{status}]" + chunk_data.get("content", ""))
-        elif status == CHUNK_TYPE.SEARCH_WITH_TEXT:
+        elif status == CHUNK_TYPE.SEARCH_GUIDE:
             docs = chunk_data.get("docs", [])
             yield _create_chunk(f"[{status}]" + json.dumps(docs, ensure_ascii=False))
-        if status == CHUNK_TYPE.STATUS:
+        elif status == CHUNK_TYPE.STEP:
             yield _create_chunk(f"[{status}]" + chunk_data.get("msg", ""))
