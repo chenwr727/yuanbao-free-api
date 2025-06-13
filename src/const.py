@@ -2,10 +2,10 @@ from enum import Enum
 
 
 class CHUNK_TYPE(str, Enum):
-    STATUS = "status"
-    SEARCH_WITH_TEXT = "search_with_text"
-    REASONER = "reasoner"
+    SEARCH_GUIDE = "searchGuid"
+    THINK = "think"
     TEXT = "text"
+    STEP = "step"
 
 
 MODEL_MAPPING = {
