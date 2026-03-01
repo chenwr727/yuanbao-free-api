@@ -1,11 +1,21 @@
+"""通用工具函数模块"""
+
 from typing import Dict
 
+from src.services.browser import browser_manager
 
-def generate_headers(request: dict, token: str) -> Dict[str, str]:
-    return {
-        "Cookie": f"hy_source={request['hy_source']}; hy_user={request['hy_user']}; hy_token={token}",
-        "Origin": "https://yuanbao.tencent.com",
-        "Referer": f"https://yuanbao.tencent.com/chat/{request['agent_id']}",
-        "X-Agentid": request["agent_id"],
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
-    }
+
+async def generate_headers() -> Dict[str, str]:
+    """生成请求头，从浏览器管理器获取最新的认证信息
+
+    Returns:
+        Dict[str, str]: 包含认证信息的请求头
+
+    Raises:
+        Exception: 无法获取请求头时抛出
+    """
+    headers = await browser_manager.get_headers()
+    if not headers:
+        raise Exception("无法获取请求头，请确保已登录")
+
+    return dict(headers)

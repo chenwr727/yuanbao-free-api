@@ -1,3 +1,5 @@
+"""聊天完成服务模块"""
+
 from typing import AsyncGenerator, Dict
 
 import httpx
@@ -12,6 +14,8 @@ DEFAULT_TIMEOUT = 60
 
 
 class ChatCompletionError(Exception):
+    """聊天完成异常"""
+
     pass
 
 
@@ -21,6 +25,20 @@ async def create_completion_stream(
     should_remove_conversation: bool = False,
     timeout: int = DEFAULT_TIMEOUT,
 ) -> AsyncGenerator[str, None]:
+    """创建聊天完成流
+
+    Args:
+        chat_request: 聊天请求
+        headers: 认证请求头
+        should_remove_conversation: 是否删除会话
+        timeout: 超时时间
+
+    Yields:
+        str: SSE 格式的数据块
+
+    Raises:
+        ChatCompletionError: 聊天完成失败时抛出
+    """
     multimedia = [m.model_dump() for m in chat_request.multimedia]
     body = {
         "model": "gpt_175B_0404",

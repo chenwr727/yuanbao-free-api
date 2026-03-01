@@ -2,128 +2,67 @@
 
 一个允许您通过 OpenAI 兼容接口访问腾讯元宝的服务。
 
-# 风险警告
-
-## **官方更新服务，新增X-Uskey等验证参数，此项目已失效，会导致封号，请慎用！**
-
 ## ✨ 核心特性
 
-✅ **完整兼容 OpenAI API 规范**  
-🚀 **支持主流元宝大模型**（DeepSeek/HunYuan系列）  
-⚡️ **流式输出 & 网络搜索功能**  
-🖼️ **支持上传图片或文件**  
-📦 **开箱即用的部署方案**（本地/Docker）  
+✅ **完整兼容 OpenAI API 规范**
+🚀 **支持主流元宝大模型**（DeepSeek/HunYuan系列）
+⚡️ **流式输出 & 网络搜索功能**
+🖼️ **支持上传图片或文件**
+🔐 **自动浏览器登录认证**
+📦 **开箱即用的部署方案**（本地/Docker）
 
 ## ⚠️ 使用须知
 
-- 本项目仅限**学习研究用途**
+- 本项目仅限**学习研究用途，请勿用于商业用途**
+- **本项目可能导致账号被封禁风险**
 - 请严格遵守腾讯元宝的[使用条款](https://yuanbao.tencent.com/)
-- `hy_token` 有时效性，过期需重新获取
 
 ## 🚀 快速开始
 
 ### 环境准备
+
 ```bash
+# 克隆项目
 git clone https://github.com/chenwr727/yuanbao-free-api.git
 cd yuanbao-free-api
+
+# 安装依赖
 pip install -r requirements.txt
+
+# 安装 Playwright 浏览器
+playwright install chromium
+```
+
+### 配置环境变量
+
+```bash
+# 复制环境变量示例文件
+cp .env.example .env
+
+# 编辑 .env 文件，配置 API Keys
+# 支持多个 key，用逗号分隔
+# API_KEYS=sk-your-api-key-here,sk-another-api-key
 ```
 
 ## 🖥️ 服务端部署
 
 ### 本地运行
+
 ```bash
-# 服务地址：http://localhost:8000
+# 启动服务（首次启动会自动打开浏览器进行扫码登录）
 python app.py
+
+# 服务地址：http://localhost:8000
 ```
 
-### Docker部署
+### Docker 部署
+
 ```bash
 # 构建镜像
 docker build -t yuanbao-free-api .
 
 # 运行容器
 docker run -d -p 8000:8000 --name yuanbao-api yuanbao-free-api
-```
-
-## 📡 客户端调用
-
-### 认证参数获取
-#### 手动获取
-![Token获取方法](example.png)
-1. 访问[腾讯元宝](https://yuanbao.tencent.com/)
-2. 打开开发者工具（F12）
-3. 捕获对话请求获取：
-   - Cookie中的 `hy_user` 和 `hy_token`
-   - 请求体中的 `agent_id`
-
-#### 自动获取
-```bash
-# 扫码登录后自动输出认证参数
-python get_cookies.py
-```
-
-### API调用示例
-```python
-import base64
-
-import requests
-from openai import OpenAI
-
-base_url = "http://localhost:8000/v1/"
-
-hy_source = "web"
-hy_user = ""    # 替换为你的用户ID
-hy_token = ""   # 替换为你的token
-
-agent_id = "naQivTmsDa"
-chat_id = ""    # 可选，如果不提供会自动创建
-
-# upload，可选
-url = base_url + "upload"
-
-file_name = "example.png"
-with open(file_name, "rb") as f:
-    file_data = base64.b64encode(f.read()).decode("utf-8")
-data = {
-    "agent_id": agent_id,
-    "hy_source": hy_source,
-    "hy_user": hy_user,
-    "file": {
-        "file_name": file_name,
-        "file_data": file_data ,
-        "file_type": "image",   # image、doc、excel、pdf等，具体看抓包返回的文件类型
-    },
-}
-headers = {"Authorization": f"Bearer {hy_token}"}
-response = requests.post(url, json=data, headers=headers)
-if response.status_code == 200:
-    print("File uploaded successfully:", response.json())
-    multimedia = [response.json()]
-else:
-    print("File upload failed:", response.status_code, response.text)
-    multimedia = []
-print(multimedia)
-
-# chat
-client = OpenAI(base_url=base_url, api_key=hy_token)
-
-response = client.chat.completions.create(
-    model="deepseek-v3",
-    messages=[{"role": "user", "content": "这是什么？"}],
-    stream=True,
-    extra_body={
-        "hy_source": hy_source,
-        "hy_user": hy_user,
-        "agent_id": agent_id,
-        "chat_id": chat_id,
-        "should_remove_conversation": False,
-        "multimedia": multimedia,
-    },
-)
-
-for chunk in response:
-    print(chunk.choices[0].delta.content or "")
 ```
 
 ## 🧠 支持模型
@@ -139,6 +78,37 @@ for chunk in response:
 | hunyuan-search       | 腾讯混元模型（带搜索功能）    |
 | hunyuan-t1-search    | 腾讯混元 T1 模型（带搜索功能）|
 
+## 🔧 配置说明
+
+### 环境变量配置
+
+在 `.env` 文件中配置以下变量：
+
+```bash
+# API 认证密钥（多个 key 用逗号分隔，必填）
+API_KEYS=sk-your-api-key-here,sk-another-api-key
+
+# Agent ID（默认为 naQivTmsDa，一般无需修改）
+# AGENT_ID=naQivTmsDa
+
+# 腾讯元宝页面 URL（默认为固定地址，一般无需修改）
+# PAGE_URL=https://yuanbao.tencent.com/chat/naQivTmsDa
+
+# 文件上传域名（默认为固定地址，一般无需修改）
+# UPLOAD_HOST=hunyuan-prod-1258344703.cos.accelerate.myqcloud.com
+```
+
+### 认证机制
+
+本项目使用浏览器自动化方式自动获取认证参数：
+
+- 服务启动时自动启动无头浏览器
+- 自动打开腾讯元宝登录页面
+- 通过二维码扫码登录
+- 自动拦截认证请求头（x-uskey 等）
+
+**注意**：首次启动时需要在终端显示的二维码上完成扫码登录。
+
 ## 🌟 应用案例
 
 [FinVizAI](https://github.com/chenwr727/FinVizAI) 实现多步骤金融分析工作流：
@@ -146,7 +116,7 @@ for chunk in response:
 - 市场趋势数据集成
 - 结构化报告生成
 
-[CodexReel](https://github.com/chenwr727/CodexReel) 一个基于 AI 的智能视频生成平台：
+[AI-Short-Video-Engine](https://github.com/chenwr727/AI-Short-Video-Engine) 一个基于 AI 的智能视频生成平台：
 - 支持文章链接或主题文本输入（支持联网搜索）
 - 自动完成内容理解与脚本生成
 - 素材匹配、语音合成与视频剪辑一体化输出
@@ -158,6 +128,12 @@ MIT License © 2025
 ## 🤝 参与贡献
 
 欢迎通过以下方式参与项目：
-1. 提交Issue报告问题
-2. 创建Pull Request贡献代码
+1. 提交 Issue 报告问题
+2. 创建 Pull Request 贡献代码
 3. 分享你的集成案例
+
+## 🙏 致谢
+
+- [Tencent YuanBao](https://yuanbao.tencent.com/) - 提供强大的 AI 能力
+- [FastAPI](https://fastapi.tiangolo.com/) - 现代化的 Python Web 框架
+- [Playwright](https://playwright.dev/) - 强大的浏览器自动化工具

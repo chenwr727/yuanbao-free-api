@@ -1,3 +1,5 @@
+"""文件上传相关工具函数模块"""
+
 import hmac
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -13,6 +15,19 @@ def generate_q_signature(
     sign_time: str,
     secret_key: str,
 ) -> str:
+    """生成腾讯云 COS 签名
+
+    Args:
+        http_method: HTTP 方法
+        path: 请求路径
+        query_params: 查询参数
+        headers: 请求头
+        sign_time: 签名时间
+        secret_key: 密钥
+
+    Returns:
+        str: 签名字符串
+    """
 
     def url_encode(s: str, safe: str = "") -> str:
         return urllib.parse.quote(s, safe=safe)
@@ -40,7 +55,18 @@ def generate_q_signature(
     return signature
 
 
-def generate_headers(file_type: str, content_length: int, upload_host: str, upload_info: Dict, user_agent: str) -> Dict:
+def generate_headers(file_type: str, content_length: int, upload_host: str, upload_info: Dict) -> Dict:
+    """生成上传请求头
+
+    Args:
+        file_type: 文件类型
+        content_length: 内容长度
+        upload_host: 上传主机
+        upload_info: 上传信息
+
+    Returns:
+        Dict: 请求头字典
+    """
     content_length = str(content_length)
 
     headers = {
@@ -49,7 +75,7 @@ def generate_headers(file_type: str, content_length: int, upload_host: str, uplo
         "Content-Type": "application/octet-stream",
         "Origin": "https://yuanbao.tencent.com",
         "Referer": "https://yuanbao.tencent.com/",
-        "User-Agent": user_agent,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
         "x-cos-security-token": upload_info["encryptToken"],
     }
 
@@ -65,7 +91,7 @@ def generate_headers(file_type: str, content_length: int, upload_host: str, uplo
     if file_type == "image":
         headers["Content-Type"] = "image/png"
         pic_operations = (
-            '{"is_pic_info":1,"rules":[{"fileid":"%s","rule":"imageMogr2/format/jpg"}]}' % upload_info["location"]
+            f'{{"is_pic_info":1,"rules":[{{"fileid":"{upload_info["location"]}","rule":"imageMogr2/format/jpg"}}]}}'
         )
         headers["Pic-Operations"] = pic_operations
         headers_to_sign["pic-operations"] = pic_operations
@@ -87,6 +113,18 @@ def generate_headers(file_type: str, content_length: int, upload_host: str, uplo
 
 
 def get_file_info(file_type: str, file_name: str, content_length, url: str, xml_data: str) -> Dict:
+    """解析文件信息
+
+    Args:
+        file_type: 文件类型
+        file_name: 文件名
+        content_length: 内容长度
+        url: 文件 URL
+        xml_data: XML 响应数据
+
+    Returns:
+        Dict: 文件信息字典
+    """
     file_info = {
         "type": file_type,
         "docType": file_type,

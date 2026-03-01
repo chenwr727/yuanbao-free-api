@@ -1,5 +1,4 @@
-from enum import Enum
-
+"""模型映射常量"""
 
 MODEL_MAPPING = {
     "deepseek-v3": {"model": "deep_seek_v3", "support_functions": None},
